@@ -2330,8 +2330,15 @@ function redzlib:MakeWindow(Configs)
 				
 				AddNewOptions = function(List, Clear)
 					if Clear then
-						for k, v in pairs(Options) do
-							RemoveOption(k, v)
+						local keys = {}
+						for k in pairs(Options) do
+							keys[#keys + 1] = k
+						end
+						for _, k in ipairs(keys) do
+							local v = Options[k]
+							if v then
+								RemoveOption(k, v)
+							end
 						end
 					end
 					if type(List) == "table" then
@@ -2350,6 +2357,7 @@ function redzlib:MakeWindow(Configs)
 				dropdownRefs.addOption = AddOption
 				dropdownRefs.selectOption = SelectOption
 				dropdownRefs.getOptions = GetOptions
+				dropdownRefs.closeDropdown = Disable
 				dropdownRefs.setSelectedAndUpdate = function(val)
 					Selected = val
 					UpdateSelected()
@@ -2432,6 +2440,9 @@ function redzlib:MakeWindow(Configs)
 			end
 			function Dropdown:SetOptions(options)
 				if type(options) == "table" and dropdownRefs.addNewOptions then
+					if dropdownRefs.closeDropdown then
+						dropdownRefs.closeDropdown()
+					end
 					dropdownRefs.addNewOptions(options, true)
 					CalculateSize()
 				end
