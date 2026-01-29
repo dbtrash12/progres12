@@ -1477,41 +1477,13 @@ function redzlib:MakeWindow(Configs)
 		}), "DarkText")
 	}), "Text")
 	
-	-- Status panel: PING | CPU | NOTIF COUNTER (styled panel seperti Show Status Panel, bukan text polos)
-	local PingNotifContainer = Create("Frame", TopBar, {
-		Name = "PingNotifContainer",
-		Size = UDim2.new(0, 185, 0, 24),
-		Position = UDim2.new(1, -205, 0, 2),
-		AnchorPoint = Vector2.new(1, 0),
-		BackgroundColor3 = Theme["Color Hub 2"],
-		BackgroundTransparency = 0.3,
-		BorderSizePixel = 0
-	})
-	Make("Corner", PingNotifContainer, UDim.new(0, 6))
-	InsertTheme(Make("Stroke", PingNotifContainer, nil, Theme["Color Stroke"]), "Stroke")
-	local StatusLabel = InsertTheme(Create("TextLabel", PingNotifContainer, {
-		Size = UDim2.new(1, -12, 1, 0),
-		Position = UDim2.new(0, 6, 0.5, 0),
-		AnchorPoint = Vector2.new(0, 0.5),
-		Text = "PING | CPU | NOTIF COUNTER",
-		TextColor3 = Theme["Color Text"],
-		BackgroundTransparency = 1,
-		TextXAlignment = "Left",
-		TextSize = 9,
-		Font = Enum.Font.GothamBold,
-		Name = "StatusLabel",
-		TextTruncate = Enum.TextTruncate.AtEnd
-	}), "Text")
-	
-	-- Tab list (sidebar) pakai background supaya tidak terlihat pisah dari hub
 	local MainScroll = InsertTheme(Create("ScrollingFrame", Components, {
 		Size = UDim2.new(0, redzlib.Save.TabSize, 1, -TopBar.Size.Y.Offset),
 		ScrollBarImageColor3 = Theme["Color Theme"],
 		Position = UDim2.new(0, 0, 1, 0),
 		AnchorPoint = Vector2.new(0, 1),
 		ScrollBarThickness = 1.5,
-		BackgroundColor3 = Theme["Color Hub 2"],
-		BackgroundTransparency = 0.7,
+		BackgroundTransparency = 1,
 		ScrollBarImageTransparency = 0.2,
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = "Y",
@@ -2219,6 +2191,7 @@ function redzlib:MakeWindow(Configs)
 				CreateTween({DropFrame, "Position", NewPos, 0.1})
 			end
 			
+			local dropdownRefs = {}
 			local AddNewOptions, GetOptions, AddOption, RemoveOption, Selected do
 				local Default = type(OpDefault) ~= "table" and {OpDefault} or OpDefault
 				local MultiSelect = DMultiSelect
@@ -2357,12 +2330,31 @@ function redzlib:MakeWindow(Configs)
 				
 				AddNewOptions = function(List, Clear)
 					if Clear then
-						table.foreach(Options, RemoveOption)
+						for k, v in pairs(Options) do
+							RemoveOption(k, v)
+						end
 					end
-					table.foreach(List, AddOption)
+					if type(List) == "table" then
+						for i, v in ipairs(List) do
+							AddOption(i, v)
+						end
+					end
 					CallbackSelected()
 					UpdateSelected()
 				end
+				
+				local function SelectOption(opt)
+					Select(opt)
+				end
+				dropdownRefs.addNewOptions = AddNewOptions
+				dropdownRefs.addOption = AddOption
+				dropdownRefs.selectOption = SelectOption
+				dropdownRefs.getOptions = GetOptions
+				dropdownRefs.setSelectedAndUpdate = function(val)
+					Selected = val
+					UpdateSelected()
+				end
+				dropdownRefs.getSelected = function() return Selected end
 				
 				table.foreach(DOptions, AddOption)
 				CallbackSelected()
@@ -2388,15 +2380,18 @@ function redzlib:MakeWindow(Configs)
 			
 			function Dropdown:Add(...)
 				local NewOptions = {...}
+				local addOpt = dropdownRefs.addOption
+				if not addOpt then return end
 				if type(NewOptions[1]) == "table" then
-					table.foreach(Option, function(_,Name)
-						AddOption(Name)
-					end)
+					for i, v in ipairs(NewOptions[1]) do
+						addOpt(i, v)
+					end
 				else
-					table.foreach(NewOptions, function(_,Name)
-						AddOption(Name)
-					end)
+					for i, v in ipairs(NewOptions) do
+						addOpt(i, v)
+					end
 				end
+				CalculateSize()
 			end
 			function Dropdown:Remove(Option)
 				for index, Value in pairs(GetOptions()) do
@@ -2406,32 +2401,48 @@ function redzlib:MakeWindow(Configs)
 				end
 			end
 			function Dropdown:Select(Option)
-				local opts = GetOptions()
+				local opts = dropdownRefs.getOptions and dropdownRefs.getOptions() or {}
+				local sel = dropdownRefs.selectOption
+				if not sel then return end
 				if type(Option) == "string" then
-					local opt = opts[Option]
-					if opt then Select(opt) end
+					for _, Val in pairs(opts) do
+						if Val.Name == Option then
+							sel(Val)
+							break
+						end
+					end
 				elseif type(Option) == "number" then
 					for ind, Val in pairs(opts) do
-						if ind == Option then Select(Val); break end
+						if ind == Option then
+							sel(Val)
+							break
+						end
 					end
 				end
 			end
 			function Dropdown:Set(Val1, Clear)
 				if type(Val1) == "table" then
-					AddNewOptions(Val1, not Clear)
+					if dropdownRefs.addNewOptions then
+						dropdownRefs.addNewOptions(Val1, not Clear)
+					end
+					CalculateSize()
 				elseif type(Val1) == "function" then
 					Callback = Val1
 				end
 			end
-			-- SetOptions: replace all options (clear + add). Supports refresh/update.
-			function Dropdown:SetOptions(list)
-				if type(list) ~= "table" then list = {} end
-				Disable()
-				AddNewOptions(list, true)
+			function Dropdown:SetOptions(options)
+				if type(options) == "table" and dropdownRefs.addNewOptions then
+					dropdownRefs.addNewOptions(options, true)
+					CalculateSize()
+				end
 			end
-			-- SetText: update displayed label without changing selection (e.g. "Select..." when cleared)
-			function Dropdown:SetText(text)
-				ActiveLabel.Text = (text and tostring(text):gsub("^%s*(.-)%s*$", "%1") ~= "") and tostring(text) or "..."
+			function Dropdown:SetText(val)
+				if dropdownRefs.setSelectedAndUpdate then
+					dropdownRefs.setSelectedAndUpdate(val)
+				end
+			end
+			function Dropdown:GetValue()
+				return dropdownRefs.getSelected and dropdownRefs.getSelected() or nil
 			end
 			return Dropdown
 		end
@@ -2735,8 +2746,6 @@ function redzlib:MakeWindow(Configs)
 	
 	CloseButton.Activated:Connect(Window.CloseBtn)
 	MinimizeButton.Activated:Connect(Window.MinimizeBtn)
-	Window.UI = MainFrame
-	Window._UI = MainFrame
 	return Window
 end
 
