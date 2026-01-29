@@ -1477,35 +1477,41 @@ function redzlib:MakeWindow(Configs)
 		}), "DarkText")
 	}), "Text")
 	
-	-- Status bar: PING | CPU | NOTIF COUNTER (satu baris di sebelah nama hub)
+	-- Status panel: PING | CPU | NOTIF COUNTER (styled panel seperti Show Status Panel, bukan text polos)
 	local PingNotifContainer = Create("Frame", TopBar, {
 		Name = "PingNotifContainer",
-		Size = UDim2.new(0, 180, 0, 28),
-		Position = UDim2.new(1, -200, 0, 0),
+		Size = UDim2.new(0, 185, 0, 24),
+		Position = UDim2.new(1, -205, 0, 2),
 		AnchorPoint = Vector2.new(1, 0),
-		BackgroundTransparency = 1
+		BackgroundColor3 = Theme["Color Hub 2"],
+		BackgroundTransparency = 0.3,
+		BorderSizePixel = 0
 	})
+	Make("Corner", PingNotifContainer, UDim.new(0, 6))
+	InsertTheme(Make("Stroke", PingNotifContainer, nil, Theme["Color Stroke"]), "Stroke")
 	local StatusLabel = InsertTheme(Create("TextLabel", PingNotifContainer, {
-		Size = UDim2.new(1, 0, 1, 0),
-		Position = UDim2.new(0, 0, 0.5, 0),
+		Size = UDim2.new(1, -12, 1, 0),
+		Position = UDim2.new(0, 6, 0.5, 0),
 		AnchorPoint = Vector2.new(0, 0.5),
 		Text = "PING | CPU | NOTIF COUNTER",
-		TextColor3 = Theme["Color Dark Text"],
+		TextColor3 = Theme["Color Text"],
 		BackgroundTransparency = 1,
 		TextXAlignment = "Left",
 		TextSize = 9,
-		Font = Enum.Font.Gotham,
+		Font = Enum.Font.GothamBold,
 		Name = "StatusLabel",
 		TextTruncate = Enum.TextTruncate.AtEnd
-	}), "DarkText")
+	}), "Text")
 	
+	-- Tab list (sidebar) pakai background supaya tidak terlihat pisah dari hub
 	local MainScroll = InsertTheme(Create("ScrollingFrame", Components, {
 		Size = UDim2.new(0, redzlib.Save.TabSize, 1, -TopBar.Size.Y.Offset),
 		ScrollBarImageColor3 = Theme["Color Theme"],
 		Position = UDim2.new(0, 0, 1, 0),
 		AnchorPoint = Vector2.new(0, 1),
 		ScrollBarThickness = 1.5,
-		BackgroundTransparency = 1,
+		BackgroundColor3 = Theme["Color Hub 2"],
+		BackgroundTransparency = 0.7,
 		ScrollBarImageTransparency = 0.2,
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = "Y",
