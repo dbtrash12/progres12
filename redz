@@ -2330,16 +2330,12 @@ function redzlib:MakeWindow(Configs)
 				
 				AddNewOptions = function(List, Clear)
 					if Clear then
-						local keys = {}
-						for k in pairs(Options) do
-							keys[#keys + 1] = k
+						-- Clear UI: destroy all children of ScrollFrame first (robust update)
+						for _, child in ipairs(ScrollFrame:GetChildren()) do
+							child:Destroy()
 						end
-						for _, k in ipairs(keys) do
-							local v = Options[k]
-							if v then
-								RemoveOption(k, v)
-							end
-						end
+						table.clear(Options)
+						Selected = MultiSelect and {} or nil
 					end
 					if type(List) == "table" then
 						for i, v in ipairs(List) do
@@ -2439,18 +2435,18 @@ function redzlib:MakeWindow(Configs)
 				end
 			end
 			function Dropdown:SetOptions(options)
-				if type(options) == "table" and dropdownRefs.addNewOptions then
-					if dropdownRefs.closeDropdown then
-						dropdownRefs.closeDropdown()
-					end
-					dropdownRefs.addNewOptions(options, true)
-					CalculateSize()
+				if type(options) ~= "table" or not dropdownRefs.addNewOptions then return end
+				if dropdownRefs.closeDropdown then
+					dropdownRefs.closeDropdown()
 				end
+				dropdownRefs.addNewOptions(options, true)
+				-- Defer size calc so ScrollFrame layout updates before measuring
+				task.defer(CalculateSize)
 			end
 			function Dropdown:SetText(val)
-				if dropdownRefs.setSelectedAndUpdate then
-					dropdownRefs.setSelectedAndUpdate(val)
-				end
+				if not dropdownRefs.setSelectedAndUpdate then return end
+				-- Normalize empty string to nil so label shows "..."
+				dropdownRefs.setSelectedAndUpdate((val == nil or val == "") and nil or val)
 			end
 			function Dropdown:GetValue()
 				return dropdownRefs.getSelected and dropdownRefs.getSelected() or nil
