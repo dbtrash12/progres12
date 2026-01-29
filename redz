@@ -1477,35 +1477,25 @@ function redzlib:MakeWindow(Configs)
 		}), "DarkText")
 	}), "Text")
 	
-	-- Ping & Notif area (sebelah nama hub, satuan di main UI)
+	-- Status bar: PING | CPU | NOTIF COUNTER (satu baris di sebelah nama hub)
 	local PingNotifContainer = Create("Frame", TopBar, {
 		Name = "PingNotifContainer",
-		Size = UDim2.new(0, 140, 0, 28),
-		Position = UDim2.new(1, -160, 0, 0),
+		Size = UDim2.new(0, 180, 0, 28),
+		Position = UDim2.new(1, -200, 0, 0),
 		AnchorPoint = Vector2.new(1, 0),
 		BackgroundTransparency = 1
 	})
-	local PingLabel = InsertTheme(Create("TextLabel", PingNotifContainer, {
-		Size = UDim2.new(0, 60, 0.5, 0),
-		Position = UDim2.new(0, 0, 0.25, 0),
-		Text = "Ping: --",
+	local StatusLabel = InsertTheme(Create("TextLabel", PingNotifContainer, {
+		Size = UDim2.new(1, 0, 1, 0),
+		Position = UDim2.new(0, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		Text = "PING | CPU | NOTIF COUNTER",
 		TextColor3 = Theme["Color Dark Text"],
 		BackgroundTransparency = 1,
 		TextXAlignment = "Left",
-		TextSize = 10,
+		TextSize = 9,
 		Font = Enum.Font.Gotham,
-		Name = "PingLabel"
-	}), "DarkText")
-	local NotifLabel = InsertTheme(Create("TextLabel", PingNotifContainer, {
-		Size = UDim2.new(1, 0, 0.5, 0),
-		Position = UDim2.new(0, 0, 0.55, 0),
-		Text = "",
-		TextColor3 = Theme["Color Dark Text"],
-		BackgroundTransparency = 1,
-		TextXAlignment = "Left",
-		TextSize = 8,
-		Font = Enum.Font.Gotham,
-		Name = "NotifLabel",
+		Name = "StatusLabel",
 		TextTruncate = Enum.TextTruncate.AtEnd
 	}), "DarkText")
 	
